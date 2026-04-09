@@ -1,34 +1,44 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenStorage {
+  // Keys for storage
+  static const String _tokenKey = 'token';
+  static const String _roleKey = 'role';
 
-  // Save token
+  /// Save JWT Token
   static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("token", token);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
   }
 
-  // Get token
+  /// Retrieve JWT Token
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("token");
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
   }
 
-  // Save role
+  /// Save User Role (doctor/patient)
   static Future<void> saveRole(String role) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("role", role);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_roleKey, role);
   }
 
-  // Get role
+  /// Retrieve User Role
   static Future<String?> getRole() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("role");
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_roleKey);
   }
 
-  // Clear all
+  /// Check if user is logged in
+  static Future<bool> isLoggedIn() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey(_tokenKey);
+  }
+
+  /// Clear stored authentication data (Logout)
   static Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_roleKey);
   }
 }
