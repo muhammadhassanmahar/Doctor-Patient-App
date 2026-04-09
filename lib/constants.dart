@@ -1,8 +1,13 @@
-// ⚠️ Android emulator -> 10.0.2.2
-// ⚠️ Real device -> PC IP address
-const String BASE_URL = "http://10.0.2.2:8000";
+// ⚠️ Android Emulator: 10.0.2.2
+// ⚠️ Physical Device: Use your PC's local IP (e.g., 192.168.1.10)
+// ⚠️ Web: Use http://localhost:8000
 
-// API Endpoints
-const String LOGIN_URL = "/login";
-const String REGISTER_URL = "/register";
-const String RECORDS_URL = "/medical-records";
+class AppConstants {
+  // Base URL
+  static const String baseUrl = "http://10.0.2.2:8000";
+
+  // API Endpoints
+  static const String loginUrl = "/login";
+  static const String registerUrl = "/register";
+  static const String recordsUrl = "/medical-records";
+}
