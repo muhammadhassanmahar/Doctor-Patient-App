@@ -1,55 +1,99 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
-// ⚠️ IMPORTANT:
-// Android emulator → 10.0.2.2
-// Real device → apne PC ka IP likho (e.g. 192.168.x.x)
-
-const String baseUrl = "http://10.0.2.2:8000";
+import '../constants.dart';
+import '../utils/token_storage.dart';
 
 class ApiService {
-
-  // ----------------------------
-  // POST Request
-  // ----------------------------
+  /// ----------------------------
+  /// POST Request
+  /// ----------------------------
   static Future<Map<String, dynamic>> post(
-      String endpoint, Map<String, dynamic> data) async {
-
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
     final response = await http.post(
-      Uri.parse("$baseUrl$endpoint"),
-      body: data,
+      Uri.parse("${AppConstants.baseUrl}$endpoint"),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(data),
     );
 
     return _handleResponse(response);
   }
 
-  // ----------------------------
-  // GET Request (with token)
-  // ----------------------------
-  static Future<Map<String, dynamic>> get(
-      String endpoint, String token) async {
+  /// ----------------------------
+  /// GET Request (with token)
+  /// ----------------------------
+  static Future<Map<String, dynamic>> get(String endpoint) async {
+    final token = await TokenStorage.getToken();
 
     final response = await http.get(
-      Uri.parse("$baseUrl$endpoint"),
+      Uri.parse("${AppConstants.baseUrl}$endpoint"),
       headers: {
-        "Authorization": "Bearer $token"
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
       },
     );
 
     return _handleResponse(response);
   }
 
-  // ----------------------------
-  // Response Handler
-  // ----------------------------
-  static Map<String, dynamic> _handleResponse(http.Response response) {
+  /// ----------------------------
+  /// PUT Request
+  /// ----------------------------
+  static Future<Map<String, dynamic>> put(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
+    final token = await TokenStorage.getToken();
 
-    final data = jsonDecode(response.body);
+    final response = await http.put(
+      Uri.parse("${AppConstants.baseUrl}$endpoint"),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(data),
+    );
+
+    return _handleResponse(response);
+  }
+
+  /// ----------------------------
+  /// DELETE Request
+  /// ----------------------------
+  static Future<Map<String, dynamic>> delete(String endpoint) async {
+    final token = await TokenStorage.getToken();
+
+    final response = await http.delete(
+      Uri.parse("${AppConstants.baseUrl}$endpoint"),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+    );
+
+    return _handleResponse(response);
+  }
+
+  /// ----------------------------
+  /// Response Handler
+  /// ----------------------------
+  static Map<String, dynamic> _handleResponse(http.Response response) {
+    final dynamic decodedData =
+        response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return data;
+      return decodedData is Map<String, dynamic>
+          ? decodedData
+          : {"data": decodedData};
     } else {
-      throw Exception(data["detail"] ?? "Something went wrong");
+      throw Exception(
+        decodedData is Map<String, dynamic>
+            ? decodedData["detail"] ?? "Something went wrong"
+            : "Something went wrong",
+      );
     }
   }
 }
