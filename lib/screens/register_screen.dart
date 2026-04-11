@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key}); // Fixed: use_super_parameters
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -48,7 +48,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       _showMessage("Registered successfully as $selectedRole");
-
       Navigator.pop(context); // Back to Login Screen
     } catch (e) {
       _showMessage(e.toString().replaceAll("Exception: ", ""));
