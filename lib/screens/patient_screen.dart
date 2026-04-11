@@ -5,7 +5,7 @@ import 'records_screen.dart';
 import 'login_screen.dart';
 
 class PatientScreen extends StatelessWidget {
-  const PatientScreen({Key? key}) : super(key: key);
+  const PatientScreen({super.key}); // Fixed: use_super_parameters
 
   /// ----------------------------
   /// LOGOUT FUNCTION
