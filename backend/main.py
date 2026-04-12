@@ -1,19 +1,23 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
+from pydantic import BaseModel
 from jose import jwt
 from datetime import datetime, timedelta
 import requests
 from time import time
 
+# ----------------------------
+# APP INIT
+# ----------------------------
 app = FastAPI()
 
 # ----------------------------
-# CORS FIX (IMPORTANT FOR FLUTTER WEB)
+# CORS FIX (FLUTTER WEB)
 # ----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # development only
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,12 +27,24 @@ security = HTTPBearer()
 SECRET_KEY = "mysecretkey"
 
 # ----------------------------
-# Fake Database (Doctors & Patients)
+# FAKE DATABASE
 # ----------------------------
 accounts_db = {}
 
 # ----------------------------
-# JWT Token Creation
+# REQUEST MODELS (FIX 422 ERROR)
+# ----------------------------
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    role: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+# ----------------------------
+# JWT TOKEN
 # ----------------------------
 def create_token(data: dict):
     to_encode = data.copy()
@@ -37,7 +53,7 @@ def create_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
 
 # ----------------------------
-# Verify Token
+# VERIFY TOKEN
 # ----------------------------
 def verify_token(token=Depends(security)):
     try:
@@ -47,7 +63,7 @@ def verify_token(token=Depends(security)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 # ----------------------------
-# Rate Limiter
+# RATE LIMITER
 # ----------------------------
 request_logs = {}
 RATE_LIMIT = 5
@@ -66,7 +82,7 @@ def rate_limiter(account=Depends(verify_token)):
     return account
 
 # ----------------------------
-# Role-based Access (Doctor / Patient)
+# ROLE BASED ACCESS
 # ----------------------------
 def role_required(roles: list):
     def wrapper(account=Depends(verify_token)):
@@ -76,84 +92,84 @@ def role_required(roles: list):
     return wrapper
 
 # ----------------------------
-# Routes
+# HOME
 # ----------------------------
 @app.get("/")
 def home():
     return {"message": "Doctor-Patient API Gateway Running"}
 
 # ----------------------------
-# Register
+# REGISTER (FIXED)
 # ----------------------------
 @app.post("/register")
-def register(username: str, password: str, role: str):
-    if role not in ["doctor", "patient"]:
+def register(data: RegisterRequest):
+    if data.role not in ["doctor", "patient"]:
         raise HTTPException(status_code=400, detail="Role must be doctor or patient")
 
-    if username in accounts_db:
+    if data.username in accounts_db:
         raise HTTPException(status_code=400, detail="Account already exists")
 
-    accounts_db[username] = {
-        "password": password,
-        "role": role
+    accounts_db[data.username] = {
+        "password": data.password,
+        "role": data.role
     }
 
-    return {"message": f"{role.capitalize()} '{username}' registered successfully"}
+    return {"message": f"{data.role.capitalize()} '{data.username}' registered successfully"}
 
 # ----------------------------
-# Login
+# LOGIN (FIXED)
 # ----------------------------
 @app.post("/login")
-def login(username: str, password: str):
-    account = accounts_db.get(username)
+def login(data: LoginRequest):
+    account = accounts_db.get(data.username)
 
-    if not account or account["password"] != password:
+    if not account or account["password"] != data.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token({
-        "sub": username,
+        "sub": data.username,
         "role": account["role"]
     })
 
     return {"access_token": token}
 
 # ----------------------------
-# Dashboard
+# DASHBOARD
 # ----------------------------
 @app.get("/dashboard")
 def dashboard(account=Depends(verify_token)):
     return {"message": f"Welcome {account['role']} {account['sub']}"}
 
 # ----------------------------
-# Doctor Only
+# DOCTOR PANEL
 # ----------------------------
 @app.get("/doctor-panel")
 def doctor_panel(account=Depends(role_required(["doctor"]))):
     return {"message": f"Doctor panel accessed by Dr. {account['sub']}"}
 
 # ----------------------------
-# Patient Only
+# PATIENT PANEL
 # ----------------------------
 @app.get("/patient-panel")
 def patient_panel(account=Depends(role_required(["patient"]))):
     return {"message": f"Patient panel accessed by {account['sub']}"}
 
 # ----------------------------
-# Medical Records
+# MEDICAL RECORDS
 # ----------------------------
 @app.get("/medical-records")
 def medical_records(account=Depends(role_required(["doctor", "patient"]))):
     return {"message": f"Medical records viewed by {account['role']} {account['sub']}"}
 
 # ----------------------------
-# Rate Limited
+# RATE LIMITED
 # ----------------------------
 @app.get("/limited")
 def limited(account=Depends(rate_limiter)):
     return {"message": f"Request allowed for {account['role']} {account['sub']}"}
 
 # ----------------------------
-# Forward API
+# FORWARD API
 # ----------------------------
 BACKEND_URL = "https://jsonplaceholder.typicode.com/todos/1"
 
