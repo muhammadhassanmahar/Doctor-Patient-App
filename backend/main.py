@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from jose import jwt
 from datetime import datetime, timedelta
@@ -6,6 +7,18 @@ import requests
 from time import time
 
 app = FastAPI()
+
+# ----------------------------
+# CORS FIX (IMPORTANT FOR FLUTTER WEB)
+# ----------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # development only
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 security = HTTPBearer()
 SECRET_KEY = "mysecretkey"
 
@@ -65,13 +78,12 @@ def role_required(roles: list):
 # ----------------------------
 # Routes
 # ----------------------------
-
 @app.get("/")
 def home():
     return {"message": "Doctor-Patient API Gateway Running"}
 
 # ----------------------------
-# Register (Doctor / Patient)
+# Register
 # ----------------------------
 @app.post("/register")
 def register(username: str, password: str, role: str):
@@ -106,7 +118,7 @@ def login(username: str, password: str):
     return {"access_token": token}
 
 # ----------------------------
-# Dashboard (Both)
+# Dashboard
 # ----------------------------
 @app.get("/dashboard")
 def dashboard(account=Depends(verify_token)):
@@ -127,21 +139,21 @@ def patient_panel(account=Depends(role_required(["patient"]))):
     return {"message": f"Patient panel accessed by {account['sub']}"}
 
 # ----------------------------
-# Shared (Medical Records)
+# Medical Records
 # ----------------------------
 @app.get("/medical-records")
 def medical_records(account=Depends(role_required(["doctor", "patient"]))):
     return {"message": f"Medical records viewed by {account['role']} {account['sub']}"}
 
 # ----------------------------
-# Rate Limited Endpoint
+# Rate Limited
 # ----------------------------
 @app.get("/limited")
 def limited(account=Depends(rate_limiter)):
     return {"message": f"Request allowed for {account['role']} {account['sub']}"}
 
 # ----------------------------
-# API Gateway Forward
+# Forward API
 # ----------------------------
 BACKEND_URL = "https://jsonplaceholder.typicode.com/todos/1"
 
