@@ -7,6 +7,10 @@ from datetime import datetime, timedelta
 import requests
 from time import time
 
+# ✅ NEW IMPORTS
+from database import users_collection
+from config import settings
+
 # ----------------------------
 # APP INIT
 # ----------------------------
@@ -24,15 +28,9 @@ app.add_middleware(
 )
 
 security = HTTPBearer()
-SECRET_KEY = "mysecretkey"
 
 # ----------------------------
-# FAKE DATABASE (WILL BE REPLACED WITH MONGODB)
-# ----------------------------
-accounts_db = {}
-
-# ----------------------------
-# REQUEST MODELS (FIX 422 ERROR)
+# REQUEST MODELS
 # ----------------------------
 class RegisterRequest(BaseModel):
     username: str
@@ -48,16 +46,16 @@ class LoginRequest(BaseModel):
 # ----------------------------
 def create_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=60)
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
 
 # ----------------------------
 # VERIFY TOKEN
 # ----------------------------
 def verify_token(token=Depends(security)):
     try:
-        payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token.credentials, settings.SECRET_KEY, algorithms=["HS256"])
         return payload
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -110,13 +108,15 @@ def register(data: RegisterRequest):
     if data.role not in ["doctor", "patient"]:
         raise HTTPException(status_code=400, detail="Role must be doctor or patient")
 
-    if data.username in accounts_db:
+    existing_user = users_collection.find_one({"username": data.username})
+    if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
 
-    accounts_db[data.username] = {
-        "password": data.password,
+    users_collection.insert_one({
+        "username": data.username,
+        "password": data.password,  # 🔒 hashing next step
         "role": data.role
-    }
+    })
 
     return {
         "message": "User registered successfully",
@@ -130,7 +130,7 @@ def register(data: RegisterRequest):
 @app.post("/login")
 def login(data: LoginRequest):
 
-    user = accounts_db.get(data.username)
+    user = users_collection.find_one({"username": data.username})
 
     if not user or user["password"] != data.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
