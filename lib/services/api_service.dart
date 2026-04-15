@@ -28,7 +28,7 @@ class ApiService {
       } else {
         return {
           "error": true,
-          "message": data["detail"] ?? "Something went wrong"
+          "message": data["detail"] ?? data["message"] ?? "Request failed"
         };
       }
     } catch (e) {
@@ -80,7 +80,19 @@ class ApiService {
   }
 
   // ----------------------------
-  // LOGIN HELPER (FIX FOR YOUR ERROR)
+  // DELETE REQUEST (NEW)
+  // ----------------------------
+  static Future<dynamic> delete(String endpoint) async {
+    final response = await http.delete(
+      Uri.parse("$baseUrl$endpoint"),
+      headers: _headers(),
+    );
+
+    return _handleResponse(response);
+  }
+
+  // ----------------------------
+  // LOGIN HELPER
   // ----------------------------
   static Future<bool> login(String username, String password) async {
     final res = await post("/login", {
@@ -97,7 +109,7 @@ class ApiService {
   }
 
   // ----------------------------
-  // REGISTER HELPER (FIX FOR YOUR ERROR)
+  // REGISTER HELPER
   // ----------------------------
   static Future<String> register(
       String username, String password, String role) async {
