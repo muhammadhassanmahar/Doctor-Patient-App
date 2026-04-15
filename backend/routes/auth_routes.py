@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from database import users_collection
 from schemas.user_schema import RegisterRequest, LoginRequest
 from utils.token import create_token
+from utils.hashing import hash_password, verify_password
 
 router = APIRouter()
 
@@ -11,16 +12,19 @@ router = APIRouter()
 @router.post("/register")
 def register(data: RegisterRequest):
 
+    # role validation
     if data.role not in ["doctor", "patient"]:
         raise HTTPException(status_code=400, detail="Role must be doctor or patient")
 
+    # check user exists
     existing_user = users_collection.find_one({"username": data.username})
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
 
+    # 🔒 HASH PASSWORD (IMPORTANT FIX)
     users_collection.insert_one({
         "username": data.username,
-        "password": data.password,  # hashing next step
+        "password": hash_password(data.password),
         "role": data.role
     })
 
@@ -38,7 +42,8 @@ def login(data: LoginRequest):
 
     user = users_collection.find_one({"username": data.username})
 
-    if not user or user["password"] != data.password:
+    # 🔒 VERIFY HASHED PASSWORD
+    if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token({
