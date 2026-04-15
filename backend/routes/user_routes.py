@@ -9,8 +9,8 @@ router = APIRouter()
 @router.get("/me")
 def get_current_user(account=Depends(verify_token)):
     return {
-        "username": account["sub"],
-        "role": account["role"]
+        "username": account.get("sub"),
+        "role": account.get("role")
     }
 
 # ----------------------------
@@ -19,5 +19,5 @@ def get_current_user(account=Depends(verify_token)):
 @router.get("/dashboard")
 def dashboard(account=Depends(verify_token)):
     return {
-        "message": f"Welcome {account['role']} {account['sub']}"
+        "message": f"Welcome {account.get('role')} {account.get('sub')}"
     }
