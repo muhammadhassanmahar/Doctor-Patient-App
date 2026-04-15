@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
+from bson import ObjectId
+
 from database import records_collection
 from schemas.record_schema import RecordCreate, RecordUpdate
 from utils.dependencies import verify_token, role_required
@@ -22,6 +24,7 @@ def create_record(data: RecordCreate, account=Depends(role_required(["doctor"]))
     }
 
     result = records_collection.insert_one(record)
+
     new_record = records_collection.find_one({"_id": result.inserted_id})
 
     return record_model(new_record)
@@ -45,18 +48,25 @@ def get_records(account=Depends(verify_token)):
 @router.put("/records/{record_id}")
 def update_record(record_id: str, data: RecordUpdate, account=Depends(role_required(["doctor"]))):
 
-    record = records_collection.find_one({"_id": record_id})
+    # 🔥 FIX: ObjectId conversion
+    try:
+        obj_id = ObjectId(record_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid record ID")
+
+    record = records_collection.find_one({"_id": obj_id})
 
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
 
     update_data = {k: v for k, v in data.dict().items() if v is not None}
 
-    records_collection.update_one(
-        {"_id": record_id},
-        {"$set": update_data}
-    )
+    if update_data:
+        records_collection.update_one(
+            {"_id": obj_id},
+            {"$set": update_data}
+        )
 
-    updated_record = records_collection.find_one({"_id": record_id})
+    updated_record = records_collection.find_one({"_id": obj_id})
 
     return record_model(updated_record)
