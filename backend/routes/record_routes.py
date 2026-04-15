@@ -29,6 +29,7 @@ def create_record(data: RecordCreate, account=Depends(role_required(["doctor"]))
 
     return record_model(new_record)
 
+
 # ----------------------------
 # GET RECORDS
 # ----------------------------
@@ -42,13 +43,13 @@ def get_records(account=Depends(verify_token)):
 
     return records_model(records)
 
+
 # ----------------------------
 # UPDATE RECORD (DOCTOR ONLY)
 # ----------------------------
 @router.put("/records/{record_id}")
 def update_record(record_id: str, data: RecordUpdate, account=Depends(role_required(["doctor"]))):
 
-    # 🔥 FIX: ObjectId conversion
     try:
         obj_id = ObjectId(record_id)
     except:
@@ -70,3 +71,24 @@ def update_record(record_id: str, data: RecordUpdate, account=Depends(role_requi
     updated_record = records_collection.find_one({"_id": obj_id})
 
     return record_model(updated_record)
+
+
+# ----------------------------
+# DELETE RECORD (DOCTOR ONLY)
+# ----------------------------
+@router.delete("/records/{record_id}")
+def delete_record(record_id: str, account=Depends(role_required(["doctor"]))):
+
+    try:
+        obj_id = ObjectId(record_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid record ID")
+
+    record = records_collection.find_one({"_id": obj_id})
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    records_collection.delete_one({"_id": obj_id})
+
+    return {"message": "Record deleted successfully"}
