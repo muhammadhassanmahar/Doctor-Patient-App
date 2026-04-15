@@ -40,12 +40,11 @@ class _RecordsScreenState extends State<RecordsScreen> {
   }
 
   // ----------------------------
-  // DELETE RECORD (optional backend support)
+  // DELETE (TEMP)
   // ----------------------------
   Future<void> deleteRecord(String id) async {
-    // If you add delete API later
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Delete API not implemented yet")),
+      const SnackBar(content: Text("Delete API not added yet")),
     );
   }
 
@@ -69,9 +68,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : records.isEmpty
-              ? const Center(
-                  child: Text("No Records Found"),
-                )
+              ? const Center(child: Text("No Records Found"))
               : ListView.builder(
                   itemCount: records.length,
                   itemBuilder: (context, index) {
@@ -79,7 +76,6 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
                     return Card(
                       margin: const EdgeInsets.all(10),
-                      elevation: 4,
                       child: ListTile(
                         leading: const Icon(Icons.medical_services),
                         title: Text(record.patient),
@@ -94,10 +90,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
                         // ----------------------------
                         // ACTIONS
                         // ----------------------------
-                        trailing: PopupMenuButton(
+                        trailing: PopupMenuButton<String>(
                           onSelected: (value) {
                             if (value == "delete") {
-                              deleteRecord(record.id);
+                              if (record.id != null) {
+                                deleteRecord(record.id!);
+                              }
                             }
                           },
                           itemBuilder: (context) => const [
@@ -113,7 +111,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
                 ),
 
       // ----------------------------
-      // FLOATING BUTTON (CREATE RECORD)
+      // ADD RECORD BUTTON
       // ----------------------------
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -124,7 +122,6 @@ class _RecordsScreenState extends State<RecordsScreen> {
             ),
           );
 
-          // refresh after create
           if (result == true) {
             fetchRecords();
           }
