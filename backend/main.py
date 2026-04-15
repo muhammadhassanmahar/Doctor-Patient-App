@@ -13,7 +13,7 @@ from time import time
 app = FastAPI()
 
 # ----------------------------
-# CORS FIX (FLUTTER WEB)
+# CORS (FLUTTER WEB FIX)
 # ----------------------------
 app.add_middleware(
     CORSMiddleware,
@@ -27,7 +27,7 @@ security = HTTPBearer()
 SECRET_KEY = "mysecretkey"
 
 # ----------------------------
-# FAKE DATABASE
+# FAKE DATABASE (WILL BE REPLACED WITH MONGODB)
 # ----------------------------
 accounts_db = {}
 
@@ -44,11 +44,11 @@ class LoginRequest(BaseModel):
     password: str
 
 # ----------------------------
-# JWT TOKEN
+# JWT TOKEN CREATE
 # ----------------------------
 def create_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    expire = datetime.utcnow() + timedelta(minutes=60)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
 
@@ -66,23 +66,26 @@ def verify_token(token=Depends(security)):
 # RATE LIMITER
 # ----------------------------
 request_logs = {}
-RATE_LIMIT = 5
+RATE_LIMIT = 10
 TIME_WINDOW = 60
 
 def rate_limiter(account=Depends(verify_token)):
     now = time()
-    timestamps = request_logs.get(account["sub"], [])
+    user = account["sub"]
+
+    timestamps = request_logs.get(user, [])
     timestamps = [t for t in timestamps if now - t < TIME_WINDOW]
 
     if len(timestamps) >= RATE_LIMIT:
         raise HTTPException(status_code=429, detail="Too many requests")
 
     timestamps.append(now)
-    request_logs[account["sub"]] = timestamps
+    request_logs[user] = timestamps
+
     return account
 
 # ----------------------------
-# ROLE BASED ACCESS
+# ROLE CHECK
 # ----------------------------
 def role_required(roles: list):
     def wrapper(account=Depends(verify_token)):
@@ -96,84 +99,106 @@ def role_required(roles: list):
 # ----------------------------
 @app.get("/")
 def home():
-    return {"message": "Doctor-Patient API Gateway Running"}
+    return {"message": "Doctor-Patient API Running Successfully"}
 
 # ----------------------------
-# REGISTER (FIXED)
+# REGISTER
 # ----------------------------
 @app.post("/register")
 def register(data: RegisterRequest):
+
     if data.role not in ["doctor", "patient"]:
         raise HTTPException(status_code=400, detail="Role must be doctor or patient")
 
     if data.username in accounts_db:
-        raise HTTPException(status_code=400, detail="Account already exists")
+        raise HTTPException(status_code=400, detail="User already exists")
 
     accounts_db[data.username] = {
         "password": data.password,
         "role": data.role
     }
 
-    return {"message": f"{data.role.capitalize()} '{data.username}' registered successfully"}
+    return {
+        "message": "User registered successfully",
+        "user": data.username,
+        "role": data.role
+    }
 
 # ----------------------------
-# LOGIN (FIXED)
+# LOGIN
 # ----------------------------
 @app.post("/login")
 def login(data: LoginRequest):
-    account = accounts_db.get(data.username)
 
-    if not account or account["password"] != data.password:
+    user = accounts_db.get(data.username)
+
+    if not user or user["password"] != data.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token({
         "sub": data.username,
-        "role": account["role"]
+        "role": user["role"]
     })
 
-    return {"access_token": token}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "role": user["role"]
+    }
 
 # ----------------------------
 # DASHBOARD
 # ----------------------------
 @app.get("/dashboard")
 def dashboard(account=Depends(verify_token)):
-    return {"message": f"Welcome {account['role']} {account['sub']}"}
+    return {
+        "message": f"Welcome {account['role']} {account['sub']}"
+    }
 
 # ----------------------------
 # DOCTOR PANEL
 # ----------------------------
 @app.get("/doctor-panel")
 def doctor_panel(account=Depends(role_required(["doctor"]))):
-    return {"message": f"Doctor panel accessed by Dr. {account['sub']}"}
+    return {
+        "message": f"Doctor dashboard accessed by {account['sub']}"
+    }
 
 # ----------------------------
 # PATIENT PANEL
 # ----------------------------
 @app.get("/patient-panel")
 def patient_panel(account=Depends(role_required(["patient"]))):
-    return {"message": f"Patient panel accessed by {account['sub']}"}
+    return {
+        "message": f"Patient dashboard accessed by {account['sub']}"
+    }
 
 # ----------------------------
 # MEDICAL RECORDS
 # ----------------------------
 @app.get("/medical-records")
 def medical_records(account=Depends(role_required(["doctor", "patient"]))):
-    return {"message": f"Medical records viewed by {account['role']} {account['sub']}"}
+    return {
+        "message": f"Medical records viewed by {account['role']} {account['sub']}"
+    }
 
 # ----------------------------
-# RATE LIMITED
+# RATE LIMITED ENDPOINT
 # ----------------------------
 @app.get("/limited")
 def limited(account=Depends(rate_limiter)):
-    return {"message": f"Request allowed for {account['role']} {account['sub']}"}
+    return {
+        "message": f"Request allowed for {account['sub']}"
+    }
 
 # ----------------------------
-# FORWARD API
+# TEST API CALL
 # ----------------------------
 BACKEND_URL = "https://jsonplaceholder.typicode.com/todos/1"
 
 @app.get("/forward")
 def forward(account=Depends(rate_limiter)):
     response = requests.get(BACKEND_URL)
-    return {"data": response.json()}
+    return {
+        "data": response.json()
+    }
