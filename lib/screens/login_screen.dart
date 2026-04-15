@@ -41,10 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (res is Map && res["access_token"] != null) {
       final String role = res["role"] ?? "";
 
-      // 🔥 SAVE TOKEN + ROLE PROPERLY
+      // ✅ FIXED: proper token storage
       TokenStorage.saveToken(
         res["access_token"],
-        role,
       );
 
       // ----------------------------
@@ -55,19 +54,18 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(builder: (_) => const DoctorPanelScreen()),
         );
-      } 
-      else if (role == "patient") {
+      } else if (role == "patient") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const PatientPanelScreen()),
         );
-      } 
-      else {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Unknown role from server")),
         );
       }
-    } 
+    }
+
     // ----------------------------
     // ERROR
     // ----------------------------

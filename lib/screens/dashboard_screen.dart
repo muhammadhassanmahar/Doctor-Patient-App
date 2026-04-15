@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../utils/token_storage.dart';
 import 'doctor_panel_screen.dart';
 import 'patient_panel_screen.dart';
+import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,37 +27,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted || _redirected) return;
 
-      final token = ApiService.token;
-
-      if (token == null) {
-        Navigator.pop(context);
-        return;
-      }
-
-      final role = _getRoleFromToken();
+      final token = TokenStorage.getToken();
+      final role = TokenStorage.getRole();
 
       _redirected = true;
 
+      // ❌ NOT LOGGED IN
+      if (token == null || token.isEmpty) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+        return;
+      }
+
+      // ✅ DOCTOR
       if (role == "doctor") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const DoctorPanelScreen()),
         );
-      } else if (role == "patient") {
+      }
+
+      // ✅ PATIENT
+      else if (role == "patient") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const PatientPanelScreen()),
         );
       }
-    });
-  }
 
-  // ----------------------------
-  // TEMP ROLE FETCH (SAFE FALLBACK)
-  // ----------------------------
-  String? _getRoleFromToken() {
-    // TODO: Improve later using SharedPreferences
-    return null;
+      // ❌ UNKNOWN ROLE
+      else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    });
   }
 
   @override

@@ -11,29 +11,32 @@ class TokenStorage {
     _token = token;
     _role = role;
 
+    // API token sync
     ApiService.token = token;
   }
 
   // ----------------------------
   // GET TOKEN
   // ----------------------------
-  static String? getToken() {
-    return _token;
-  }
+  static String? getToken() => _token;
 
   // ----------------------------
   // GET ROLE
   // ----------------------------
-  static String? getRole() {
-    return _role;
-  }
+  static String? getRole() => _role;
 
   // ----------------------------
   // CHECK LOGIN STATUS
   // ----------------------------
   static bool isLoggedIn() {
-    return _token != null;
+    return _token != null && _token!.isNotEmpty;
   }
+
+  // ----------------------------
+  // CHECK ROLE HELPERS
+  // ----------------------------
+  static bool isDoctor() => _role == "doctor";
+  static bool isPatient() => _role == "patient";
 
   // ----------------------------
   // CLEAR (LOGOUT)
