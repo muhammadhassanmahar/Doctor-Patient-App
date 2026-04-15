@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import 'dashboard_screen.dart';
 import 'register_screen.dart';
+import 'doctor_panel_screen.dart';
+import 'patient_panel_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,10 +38,27 @@ class _LoginScreenState extends State<LoginScreen> {
     // SUCCESS
     // ----------------------------
     if (res is Map && res["access_token"] != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+      final String role = res["role"] ?? "";
+
+      ApiService.token = res["access_token"];
+
+      if (role == "doctor") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DoctorPanelScreen()),
+        );
+      } 
+      else if (role == "patient") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PatientPanelScreen()),
+        );
+      } 
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Unknown role")),
+        );
+      }
     } 
     // ----------------------------
     // ERROR
@@ -107,9 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 20),
 
-                  // ----------------------------
-                  // LOGIN BUTTON
-                  // ----------------------------
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -126,8 +141,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text("Login"),
                     ),
                   ),
-
-                  const SizedBox(height: 10),
 
                   TextButton(
                     onPressed: loading
