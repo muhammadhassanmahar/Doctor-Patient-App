@@ -11,6 +11,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  bool _redirected = false;
+
   @override
   void initState() {
     super.initState();
@@ -22,6 +24,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ----------------------------
   void _redirectUser() {
     Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted || _redirected) return;
+
       final token = ApiService.token;
 
       if (token == null) {
@@ -29,17 +33,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return;
       }
 
-      // Decode role from stored login response (simple approach)
-      // NOTE: better approach is storing role separately
       final role = _getRoleFromToken();
+
+      _redirected = true;
 
       if (role == "doctor") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const DoctorPanelScreen()),
         );
-      } 
-      else if (role == "patient") {
+      } else if (role == "patient") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const PatientPanelScreen()),
@@ -49,11 +52,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ----------------------------
-  // TEMP ROLE FETCH (simple fix)
+  // TEMP ROLE FETCH (SAFE FALLBACK)
   // ----------------------------
   String? _getRoleFromToken() {
-    // Because we stored only token, we fallback to API login response structure
-    // Best practice: store role in shared storage later
+    // TODO: Improve later using SharedPreferences
     return null;
   }
 
