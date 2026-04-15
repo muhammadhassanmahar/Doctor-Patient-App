@@ -11,29 +11,56 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final username = TextEditingController();
-  final password = TextEditingController();
+  final TextEditingController username = TextEditingController();
+  final TextEditingController password = TextEditingController();
+
   bool loading = false;
 
-  login() async {
+  // ----------------------------
+  // LOGIN FUNCTION
+  // ----------------------------
+  Future<void> login() async {
+    if (loading) return;
+
     setState(() => loading = true);
 
-    final res = await ApiService.login(
-      username.text,
-      password.text,
-    );
+    final res = await ApiService.post("/login", {
+      "username": username.text.trim(),
+      "password": password.text.trim(),
+    });
+
+    if (!mounted) return;
 
     setState(() => loading = false);
 
-    if (res["access_token"] != null) {
+    // ----------------------------
+    // SUCCESS
+    // ----------------------------
+    if (res is Map && res["access_token"] != null) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(res["detail"] ?? "Error")));
+    } 
+    // ----------------------------
+    // ERROR
+    // ----------------------------
+    else {
+      final message = res is Map
+          ? (res["detail"] ?? res["message"] ?? "Login failed")
+          : "Login failed";
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
+  }
+
+  @override
+  void dispose() {
+    username.dispose();
+    password.dispose();
+    super.dispose();
   }
 
   @override
@@ -42,41 +69,77 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [Colors.blue, Colors.purple]),
+          gradient: LinearGradient(
+            colors: [Colors.blue, Colors.purple],
+          ),
         ),
         child: Center(
           child: Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            elevation: 8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Login",
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-
-                  TextField(controller: username, decoration: const InputDecoration(labelText: "Username")),
-                  TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: "Password")),
+                  const Text(
+                    "Login",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
 
                   const SizedBox(height: 20),
 
-                  loading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: login,
-                          child: const Text("Login"),
-                        ),
+                  TextField(
+                    controller: username,
+                    decoration: const InputDecoration(labelText: "Username"),
+                  ),
+
+                  TextField(
+                    controller: password,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: "Password"),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ----------------------------
+                  // LOGIN BUTTON
+                  // ----------------------------
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : login,
+                      child: loading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text("Login"),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
 
                   TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const RegisterScreen()),
-                      );
-                    },
+                    onPressed: loading
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const RegisterScreen(),
+                              ),
+                            );
+                          },
                     child: const Text("Create Account"),
                   )
                 ],
