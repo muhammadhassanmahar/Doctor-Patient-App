@@ -1,4 +1,3 @@
-import '../models/user_model.dart';
 import 'api_service.dart';
 
 class AuthService {
@@ -13,7 +12,11 @@ class AuthService {
       "role": role,
     });
 
-    return res["message"] ?? "Error";
+    if (res is Map && res["message"] != null) {
+      return res["message"];
+    }
+
+    return "Registration failed";
   }
 
   // ----------------------------
@@ -25,7 +28,7 @@ class AuthService {
       "password": password,
     });
 
-    if (res["access_token"] != null) {
+    if (res is Map && res["access_token"] != null) {
       ApiService.token = res["access_token"];
       return true;
     }
@@ -34,9 +37,15 @@ class AuthService {
   }
 
   // ----------------------------
-  // GET DASHBOARD
+  // DASHBOARD
   // ----------------------------
   static Future<Map<String, dynamic>> dashboard() async {
-    return await ApiService.get("/dashboard");
+    final res = await ApiService.get("/dashboard");
+
+    if (res is Map<String, dynamic>) {
+      return res;
+    }
+
+    return {};
   }
 }
