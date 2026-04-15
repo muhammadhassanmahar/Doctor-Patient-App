@@ -1,15 +1,15 @@
 class RecordModel {
   final String? id;
   final String patient;
-  final String doctor;
+  final String? doctor;
   final String diagnosis;
   final String prescription;
-  final String? createdAt;
+  final DateTime? createdAt;
 
   RecordModel({
     this.id,
     required this.patient,
-    required this.doctor,
+    this.doctor,
     required this.diagnosis,
     required this.prescription,
     this.createdAt,
@@ -20,12 +20,14 @@ class RecordModel {
   // ----------------------------
   factory RecordModel.fromJson(Map<String, dynamic> json) {
     return RecordModel(
-      id: json["id"]?.toString(),
+      id: json["_id"]?.toString() ?? json["id"]?.toString(),
       patient: json["patient"] ?? "",
-      doctor: json["doctor"] ?? "",
+      doctor: json["doctor"],
       diagnosis: json["diagnosis"] ?? "",
       prescription: json["prescription"] ?? "",
-      createdAt: json["created_at"]?.toString(),
+      createdAt: json["created_at"] != null
+          ? DateTime.tryParse(json["created_at"].toString())
+          : null,
     );
   }
 
