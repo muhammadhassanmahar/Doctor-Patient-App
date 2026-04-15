@@ -22,7 +22,7 @@ class RecordModel {
     return RecordModel(
       id: json["_id"]?.toString() ?? json["id"]?.toString(),
       patient: json["patient"] ?? "",
-      doctor: json["doctor"],
+      doctor: json["doctor"]?.toString(),
       diagnosis: json["diagnosis"] ?? "",
       prescription: json["prescription"] ?? "",
       createdAt: json["created_at"] != null
