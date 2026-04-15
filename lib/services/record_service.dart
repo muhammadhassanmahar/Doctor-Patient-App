@@ -3,12 +3,12 @@ import 'api_service.dart';
 
 class RecordService {
   // ----------------------------
-  // CREATE RECORD (DOCTOR ONLY)
+  // CREATE RECORD
   // ----------------------------
   static Future<RecordModel?> createRecord(RecordModel record) async {
     final res = await ApiService.post("/records", record.toJson());
 
-    if (res is Map) {
+    if (res is Map<String, dynamic>) {
       return RecordModel.fromJson(res);
     }
 
@@ -16,13 +16,15 @@ class RecordService {
   }
 
   // ----------------------------
-  // GET RECORDS (DOCTOR / PATIENT)
+  // GET RECORDS
   // ----------------------------
   static Future<List<RecordModel>> getRecords() async {
     final res = await ApiService.get("/records");
 
     if (res is List) {
-      return res.map((e) => RecordModel.fromJson(e)).toList();
+      return res
+          .map((e) => RecordModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
     }
 
     return [];
@@ -35,7 +37,7 @@ class RecordService {
       String id, Map<String, dynamic> data) async {
     final res = await ApiService.put("/records/$id", data);
 
-    if (res is Map) {
+    if (res is Map<String, dynamic>) {
       return true;
     }
 
@@ -48,7 +50,7 @@ class RecordService {
   static Future<bool> deleteRecord(String id) async {
     final res = await ApiService.delete("/records/$id");
 
-    if (res is Map) {
+    if (res is Map<String, dynamic>) {
       return true;
     }
 
