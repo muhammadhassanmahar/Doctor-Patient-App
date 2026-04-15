@@ -2,63 +2,57 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:8000"; 
-  // (Android emulator ke liye)
+  static const String baseUrl = "http://10.0.2.2:8000";
 
   static String? token;
 
   // ----------------------------
-  // REGISTER
+  // GET REQUEST
   // ----------------------------
-  static Future<Map<String, dynamic>> register(
-      String username, String password, String role) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/register"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "username": username,
-        "password": password,
-        "role": role,
-      }),
-    );
-
-    return jsonDecode(response.body);
-  }
-
-  // ----------------------------
-  // LOGIN
-  // ----------------------------
-  static Future<Map<String, dynamic>> login(
-      String username, String password) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/login"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "username": username,
-        "password": password,
-      }),
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (data["access_token"] != null) {
-      token = data["access_token"];
-    }
-
-    return data;
-  }
-
-  // ----------------------------
-  // DASHBOARD
-  // ----------------------------
-  static Future<Map<String, dynamic>> dashboard() async {
+  static Future<Map<String, dynamic>> get(String endpoint) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/dashboard"),
-      headers: {
-        "Authorization": "Bearer $token",
-      },
+      Uri.parse("$baseUrl$endpoint"),
+      headers: _headers(),
     );
 
     return jsonDecode(response.body);
+  }
+
+  // ----------------------------
+  // POST REQUEST
+  // ----------------------------
+  static Future<Map<String, dynamic>> post(
+      String endpoint, Map<String, dynamic> body) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl$endpoint"),
+      headers: _headers(),
+      body: jsonEncode(body),
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  // ----------------------------
+  // PUT REQUEST
+  // ----------------------------
+  static Future<Map<String, dynamic>> put(
+      String endpoint, Map<String, dynamic> body) async {
+    final response = await http.put(
+      Uri.parse("$baseUrl$endpoint"),
+      headers: _headers(),
+      body: jsonEncode(body),
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  // ----------------------------
+  // HEADERS
+  // ----------------------------
+  static Map<String, String> _headers() {
+    return {
+      "Content-Type": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    };
   }
 }
