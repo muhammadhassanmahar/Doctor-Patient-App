@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../utils/token_storage.dart';
 import 'register_screen.dart';
 import 'doctor_panel_screen.dart';
 import 'patient_panel_screen.dart';
@@ -40,8 +41,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (res is Map && res["access_token"] != null) {
       final String role = res["role"] ?? "";
 
-      ApiService.token = res["access_token"];
+      // 🔥 SAVE TOKEN + ROLE PROPERLY
+      TokenStorage.saveToken(
+        res["access_token"],
+        role,
+      );
 
+      // ----------------------------
+      // ROLE BASED REDIRECT
+      // ----------------------------
       if (role == "doctor") {
         Navigator.pushReplacement(
           context,
@@ -56,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } 
       else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Unknown role")),
+          const SnackBar(content: Text("Unknown role from server")),
         );
       }
     } 
