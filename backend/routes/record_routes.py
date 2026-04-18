@@ -9,6 +9,7 @@ from models.record_model import record_model, records_model
 
 router = APIRouter()
 
+
 # ====================================================
 # CREATE RECORD (DOCTOR ONLY)
 # ====================================================
@@ -23,7 +24,6 @@ def create_record(
         "doctor": account["sub"],
         "diagnosis": data.diagnosis,
         "prescription": data.prescription,
-        "notes": data.notes if hasattr(data, "notes") else "",
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -44,19 +44,15 @@ def create_record(
 @router.get("/records")
 def get_records(account=Depends(verify_token)):
 
-    # Doctor → apne patients ke records
     if account["role"] == "doctor":
-        records = records_collection.find({"doctor": account["sub"]})
-
-    # Patient → sirf apne records
+        query = {"doctor": account["sub"]}
     else:
-        records = records_collection.find({"patient": account["sub"]})
+        query = {"patient": account["sub"]}
+
+    records = records_collection.find(query)
 
     return {
-        "count": records_collection.count_documents(
-            {"doctor": account["sub"]} if account["role"] == "doctor"
-            else {"patient": account["sub"]}
-        ),
+        "count": records_collection.count_documents(query),
         "records": records_model(records)
     }
 
@@ -81,22 +77,21 @@ def update_record(
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
 
-    # doctor ownership check
+    # ownership check
     if record["doctor"] != account["sub"]:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    update_data = {
-        k: v for k, v in data.dict().items()
-        if v is not None
-    }
+    update_data = {k: v for k, v in data.dict().items() if v is not None}
 
-    if update_data:
-        update_data["updated_at"] = datetime.utcnow()
+    if not update_data:
+        return {"message": "No fields to update"}
 
-        records_collection.update_one(
-            {"_id": obj_id},
-            {"$set": update_data}
-        )
+    update_data["updated_at"] = datetime.utcnow()
+
+    records_collection.update_one(
+        {"_id": obj_id},
+        {"$set": update_data}
+    )
 
     updated_record = records_collection.find_one({"_id": obj_id})
 
@@ -125,7 +120,7 @@ def delete_record(
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
 
-    # doctor ownership check
+    # ownership check
     if record["doctor"] != account["sub"]:
         raise HTTPException(status_code=403, detail="Not allowed")
 
