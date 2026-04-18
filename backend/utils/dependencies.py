@@ -7,41 +7,63 @@ from time import time
 security = HTTPBearer()
 
 # ----------------------------
-# VERIFY TOKEN
+# VERIFY JWT TOKEN
 # ----------------------------
 def verify_token(token=Depends(security)):
     try:
-        payload = jwt.decode(token.credentials, settings.SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(
+            token.credentials,
+            settings.SECRET_KEY,
+            algorithms=["HS256"]
+        )
         return payload
+
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
 
 # ----------------------------
-# ROLE CHECK
+# ROLE BASED ACCESS CONTROL
 # ----------------------------
 def role_required(roles: list):
     def wrapper(account=Depends(verify_token)):
         if account.get("role") not in roles:
-            raise HTTPException(status_code=403, detail="Access denied")
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: insufficient permissions"
+            )
         return account
     return wrapper
 
 # ----------------------------
-# RATE LIMITER
+# RATE LIMITER (PER USER)
 # ----------------------------
 request_logs = {}
 RATE_LIMIT = 10
-TIME_WINDOW = 60
+TIME_WINDOW = 60  # seconds
 
 def rate_limiter(account=Depends(verify_token)):
     now = time()
-    user = account["sub"]
+    user = account.get("sub")
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid user token"
+        )
 
     timestamps = request_logs.get(user, [])
+
+    # remove old requests
     timestamps = [t for t in timestamps if now - t < TIME_WINDOW]
 
     if len(timestamps) >= RATE_LIMIT:
-        raise HTTPException(status_code=429, detail="Too many requests")
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Try again later."
+        )
 
     timestamps.append(now)
     request_logs[user] = timestamps
