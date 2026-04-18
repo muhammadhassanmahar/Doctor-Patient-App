@@ -11,6 +11,7 @@ class DoctorPanelScreen extends StatefulWidget {
 
 class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
   bool isLoading = false;
+
   String message = "";
   List<dynamic> records = [];
 
@@ -20,38 +21,39 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
     fetchRecords();
   }
 
-  /// ----------------------------
-  /// FETCH DATA
-  /// ----------------------------
+  // ============================
+  // FETCH RECORDS (FIXED ENDPOINT)
+  // ============================
   Future<void> fetchRecords() async {
     setState(() => isLoading = true);
 
     try {
-      final res = await ApiService.get("/medical-records");
+      final res = await ApiService.get("/records");
 
       if (res is Map && res["error"] == true) {
-        setState(() {
-          message = res["message"];
-          records = [];
-        });
+        message = res["message"];
+        records = [];
       } else {
-        setState(() {
-          message = "Data loaded successfully";
-          records = [res];
-        });
+        message = "Records loaded successfully";
+
+        if (res is Map && res["records"] != null) {
+          records = res["records"];
+        } else if (res is List) {
+          records = res;
+        } else {
+          records = [];
+        }
       }
     } catch (e) {
-      setState(() {
-        message = "Server error occurred";
-      });
+      message = "Server error occurred";
     }
 
     setState(() => isLoading = false);
   }
 
-  /// ----------------------------
-  /// LOGOUT
-  /// ----------------------------
+  // ============================
+  // LOGOUT
+  // ============================
   void logout() {
     ApiService.token = null;
 
@@ -62,10 +64,10 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
     );
   }
 
-  /// ----------------------------
-  /// UI CARD (STATS)
-  /// ----------------------------
-  Widget _buildStatsCard(String title, IconData icon, Color color) {
+  // ============================
+  // STATS CARD
+  // ============================
+  Widget statsCard(String title, IconData icon, Color color) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.all(6),
@@ -78,24 +80,24 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
         ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.white, size: 30),
-            const SizedBox(height: 10),
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(height: 8),
             Text(
               title,
               style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold),
-            ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            )
           ],
         ),
       ),
     );
   }
 
-  /// ----------------------------
-  /// UI
-  /// ----------------------------
+  // ============================
+  // UI
+  // ============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,7 +121,8 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  /// HEADER
+
+                  // ================= HEADER =================
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -129,7 +132,7 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Text(
-                      "Welcome Doctor 👨‍⚕️\nManage your patients easily",
+                      "Welcome Doctor 👨‍⚕️\nManage patients & prescriptions",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -140,11 +143,11 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
 
                   const SizedBox(height: 15),
 
-                  /// STATS ROW
+                  // ================= STATS =================
                   Row(
                     children: [
-                      _buildStatsCard("Records", Icons.folder, Colors.blue),
-                      _buildStatsCard("Patients", Icons.people, Colors.purple),
+                      statsCard("Records", Icons.folder, Colors.blue),
+                      statsCard("Patients", Icons.people, Colors.purple),
                     ],
                   ),
 
@@ -157,26 +160,14 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
 
                   const SizedBox(height: 15),
 
-                  /// ACTION BUTTONS
+                  // ================= ACTIONS =================
                   Card(
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    child: ListTile(
-                      leading: const Icon(Icons.medical_services,
-                          color: Colors.blue),
-                      title: const Text("View Medical Records"),
-                      subtitle: const Text("All patient data"),
-                      onTap: fetchRecords,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-
-                  Card(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
-                      leading:
-                          const Icon(Icons.refresh, color: Colors.green),
-                      title: const Text("Refresh Data"),
+                      leading: const Icon(Icons.refresh, color: Colors.green),
+                      title: const Text("Refresh Records"),
                       onTap: fetchRecords,
                     ),
                   ),
@@ -184,14 +175,16 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
                   const SizedBox(height: 15),
 
                   const Text(
-                    "Recent Records",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    "Patient Records",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
 
                   const SizedBox(height: 10),
 
-                  /// RECORD LIST
+                  // ================= RECORD LIST =================
                   if (records.isEmpty)
                     const Center(
                       child: Padding(
@@ -200,31 +193,25 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
                       ),
                     )
                   else
-                    ...records.map((e) {
-                      return Container(
+                    ...records.map((r) {
+                      return Card(
                         margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 5,
-                            )
-                          ],
                         ),
                         child: ListTile(
                           leading: const CircleAvatar(
                             backgroundColor: Colors.blue,
                             child: Icon(Icons.person, color: Colors.white),
                           ),
-                          title: Text(
-                            e.toString(),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          title: Text(r["diagnosis"] ?? "No diagnosis"),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Patient: ${r["patient"] ?? ""}"),
+                              Text("Medicine: ${r["prescription"] ?? ""}"),
+                            ],
                           ),
-                          trailing: const Icon(Icons.arrow_forward_ios,
-                              size: 16),
                         ),
                       );
                     }).toList(),
