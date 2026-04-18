@@ -1,13 +1,14 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class AppConstants {
   /// ----------------------------
-  /// BASE URL (AUTO FIX FOR WEB + EMULATOR)
+  /// BASE URL (WEB + EMULATOR FIXED)
   /// ----------------------------
   static String get baseUrl {
-    // Flutter Web
-    if (identical(0, 0.0)) {
+    // Flutter Web (Chrome)
+    if (kIsWeb) {
       return "http://localhost:8000";
     }
 
@@ -16,7 +17,7 @@ class AppConstants {
       return "http://10.0.2.2:8000";
     }
 
-    // iOS / Desktop / Physical Device fallback
+    // iOS / Desktop / Physical device
     return "http://localhost:8000";
   }
 
