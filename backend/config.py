@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     # ----------------------------
-    # SECURITY CONFIG
+    # SECURITY CONFIG (JWT)
     # ----------------------------
     SECRET_KEY: str = Field(
         default="mysecretkey",
@@ -26,16 +26,25 @@ class Settings(BaseSettings):
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
         default=60,
-        description="Token expiry time (minutes)"
+        description="Token expiry time in minutes"
     )
+
+    # ----------------------------
+    # API CONFIG
+    # ----------------------------
+    API_TITLE: str = "Doctor Patient API"
+    API_VERSION: str = "1.0.0"
 
     # ----------------------------
     # ENV FILE SUPPORT
     # ----------------------------
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8"
+    }
 
 
-# Instance (global use ke liye)
+# ----------------------------
+# GLOBAL SETTINGS INSTANCE
+# ----------------------------
 settings = Settings()
