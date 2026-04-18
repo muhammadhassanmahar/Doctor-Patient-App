@@ -7,10 +7,9 @@ from datetime import datetime
 
 router = APIRouter()
 
-
-# ----------------------------
+# ====================================================
 # REGISTER USER (DOCTOR / PATIENT)
-# ----------------------------
+# ====================================================
 @router.post("/register")
 def register(data: RegisterModel):
 
@@ -22,7 +21,10 @@ def register(data: RegisterModel):
         )
 
     # check if user exists
-    existing_user = users_collection.find_one({"username": data.username})
+    existing_user = users_collection.find_one(
+        {"username": data.username}
+    )
+
     if existing_user:
         raise HTTPException(
             status_code=400,
@@ -34,29 +36,33 @@ def register(data: RegisterModel):
         "username": data.username,
         "password": hash_password(data.password),
         "role": data.role,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
     }
 
-    # insert into DB
     users_collection.insert_one(user_data)
 
     return {
         "status": "success",
         "message": "User registered successfully",
-        "user": data.username,
-        "role": data.role
+        "user": {
+            "username": data.username,
+            "role": data.role
+        }
     }
 
 
-# ----------------------------
+# ====================================================
 # LOGIN USER
-# ----------------------------
+# ====================================================
 @router.post("/login")
 def login(data: LoginModel):
 
-    user = users_collection.find_one({"username": data.username})
+    user = users_collection.find_one(
+        {"username": data.username}
+    )
 
-    # verify user + password
+    # verify credentials
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(
             status_code=401,
@@ -73,5 +79,8 @@ def login(data: LoginModel):
         "status": "success",
         "access_token": token,
         "token_type": "bearer",
-        "role": user["role"]
+        "user": {
+            "username": user["username"],
+            "role": user["role"]
+        }
     }
