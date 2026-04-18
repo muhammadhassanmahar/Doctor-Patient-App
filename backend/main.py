@@ -9,14 +9,18 @@ from routes import auth_routes, user_routes, record_routes
 # ----------------------------
 # APP INIT
 # ----------------------------
-app = FastAPI()
+app = FastAPI(
+    title="Doctor Patient API",
+    description="Doctor-Patient Management System Backend",
+    version="1.0.0"
+)
 
 # ----------------------------
-# CORS (FLUTTER / FRONTEND FIX)
+# CORS CONFIG (FLUTTER / WEB FIX)
 # ----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # production mein specific domain dena hota hai
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,15 +29,27 @@ app.add_middleware(
 # ----------------------------
 # ROUTES CONNECT
 # ----------------------------
-app.include_router(auth_routes.router)
-app.include_router(user_routes.router)
-app.include_router(record_routes.router)
+app.include_router(auth_routes.router, prefix="/auth", tags=["Authentication"])
+app.include_router(user_routes.router, prefix="/users", tags=["Users"])
+app.include_router(record_routes.router, prefix="/records", tags=["Medical Records"])
 
 # ----------------------------
-# HOME
+# ROOT CHECK
 # ----------------------------
 @app.get("/")
 def home():
     return {
+        "status": "success",
         "message": "Doctor-Patient API Running Successfully 🚀"
+    }
+
+# ----------------------------
+# HEALTH CHECK (IMPORTANT FOR DEBUG)
+# ----------------------------
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "backend": "running",
+        "database": "check in database.py"
     }
