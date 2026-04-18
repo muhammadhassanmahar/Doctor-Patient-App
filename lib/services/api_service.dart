@@ -1,14 +1,30 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:8000";
-
   static String? token;
 
-  // ----------------------------
-  // HEADERS
-  // ----------------------------
+  /// ----------------------------
+  /// BASE URL (AUTO FIX WEB + EMULATOR)
+  /// ----------------------------
+  static String get baseUrl {
+    try {
+      // Android Emulator
+      if (Platform.isAndroid) {
+        return "http://10.0.2.2:8000";
+      }
+      // iOS / Desktop
+      return "http://127.0.0.1:8000";
+    } catch (e) {
+      // Flutter Web fallback
+      return "http://127.0.0.1:8000";
+    }
+  }
+
+  /// ----------------------------
+  /// HEADERS
+  /// ----------------------------
   static Map<String, String> _headers() {
     return {
       "Content-Type": "application/json",
@@ -16,32 +32,25 @@ class ApiService {
     };
   }
 
-  // ----------------------------
-  // SAFE RESPONSE HANDLER
-  // ----------------------------
+  /// ----------------------------
+  /// RESPONSE HANDLER
+  /// ----------------------------
   static dynamic _handleResponse(http.Response response) {
-    try {
-      final data = jsonDecode(response.body);
+    final data = jsonDecode(response.body);
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
-      } else {
-        return {
-          "error": true,
-          "message": data["detail"] ?? data["message"] ?? "Request failed"
-        };
-      }
-    } catch (e) {
-      return {
-        "error": true,
-        "message": "Invalid server response"
-      };
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
     }
+
+    return {
+      "error": true,
+      "message": data["detail"] ?? data["message"] ?? "Request failed"
+    };
   }
 
-  // ----------------------------
-  // GET REQUEST
-  // ----------------------------
+  /// ----------------------------
+  /// GET
+  /// ----------------------------
   static Future<dynamic> get(String endpoint) async {
     final response = await http.get(
       Uri.parse("$baseUrl$endpoint"),
@@ -51,11 +60,13 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  // ----------------------------
-  // POST REQUEST
-  // ----------------------------
+  /// ----------------------------
+  /// POST
+  /// ----------------------------
   static Future<dynamic> post(
-      String endpoint, Map<String, dynamic> body) async {
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     final response = await http.post(
       Uri.parse("$baseUrl$endpoint"),
       headers: _headers(),
@@ -65,11 +76,13 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  // ----------------------------
-  // PUT REQUEST
-  // ----------------------------
+  /// ----------------------------
+  /// PUT
+  /// ----------------------------
   static Future<dynamic> put(
-      String endpoint, Map<String, dynamic> body) async {
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     final response = await http.put(
       Uri.parse("$baseUrl$endpoint"),
       headers: _headers(),
@@ -79,9 +92,9 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  // ----------------------------
-  // DELETE REQUEST (NEW)
-  // ----------------------------
+  /// ----------------------------
+  /// DELETE
+  /// ----------------------------
   static Future<dynamic> delete(String endpoint) async {
     final response = await http.delete(
       Uri.parse("$baseUrl$endpoint"),
@@ -89,40 +102,5 @@ class ApiService {
     );
 
     return _handleResponse(response);
-  }
-
-  // ----------------------------
-  // LOGIN HELPER
-  // ----------------------------
-  static Future<bool> login(String username, String password) async {
-    final res = await post("/login", {
-      "username": username,
-      "password": password,
-    });
-
-    if (res is Map && res["access_token"] != null) {
-      token = res["access_token"];
-      return true;
-    }
-
-    return false;
-  }
-
-  // ----------------------------
-  // REGISTER HELPER
-  // ----------------------------
-  static Future<String> register(
-      String username, String password, String role) async {
-    final res = await post("/register", {
-      "username": username,
-      "password": password,
-      "role": role,
-    });
-
-    if (res is Map && res["message"] != null) {
-      return res["message"];
-    }
-
-    return "Registration failed";
   }
 }
