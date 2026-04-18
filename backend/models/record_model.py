@@ -1,20 +1,22 @@
 from bson import ObjectId
 
 # ----------------------------
-# RECORD MODEL
+# SINGLE RECORD MODEL
 # ----------------------------
 def record_model(record) -> dict:
     return {
         "id": str(record["_id"]),
-        "patient": record["patient"],
-        "doctor": record["doctor"],
-        "diagnosis": record["diagnosis"],
-        "prescription": record["prescription"],
-        "created_at": record.get("created_at")
+        "doctor": record.get("doctor"),
+        "patient": record.get("patient"),
+        "diagnosis": record.get("diagnosis"),
+        "prescription": record.get("prescription"),
+        "notes": record.get("notes", ""),
+        "created_at": record.get("created_at"),
+        "updated_at": record.get("updated_at")
     }
 
 # ----------------------------
-# HELPER (LIST OF RECORDS)
+# MULTIPLE RECORDS MODEL
 # ----------------------------
 def records_model(records) -> list:
     return [record_model(record) for record in records]
