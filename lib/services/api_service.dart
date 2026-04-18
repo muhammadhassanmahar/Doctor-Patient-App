@@ -6,18 +6,15 @@ class ApiService {
   static String? token;
 
   /// ----------------------------
-  /// BASE URL (AUTO FIX WEB + EMULATOR)
+  /// BASE URL
   /// ----------------------------
   static String get baseUrl {
     try {
-      // Android Emulator
       if (Platform.isAndroid) {
         return "http://10.0.2.2:8000";
       }
-      // iOS / Desktop
       return "http://127.0.0.1:8000";
     } catch (e) {
-      // Flutter Web fallback
       return "http://127.0.0.1:8000";
     }
   }
@@ -33,36 +30,40 @@ class ApiService {
   }
 
   /// ----------------------------
-  /// RESPONSE HANDLER
+  /// SAFE RESPONSE HANDLER
   /// ----------------------------
   static dynamic _handleResponse(http.Response response) {
-    final data = jsonDecode(response.body);
+    try {
+      final data = jsonDecode(response.body);
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return data;
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return data;
+      }
+
+      return {
+        "error": true,
+        "message": data["detail"] ?? data["message"] ?? "Request failed"
+      };
+    } catch (e) {
+      return {
+        "error": true,
+        "message": "Invalid server response"
+      };
     }
-
-    return {
-      "error": true,
-      "message": data["detail"] ?? data["message"] ?? "Request failed"
-    };
   }
 
-  /// ----------------------------
-  /// GET
-  /// ----------------------------
+  // ====================================================
+  // GENERAL REQUESTS
+  // ====================================================
+
   static Future<dynamic> get(String endpoint) async {
     final response = await http.get(
       Uri.parse("$baseUrl$endpoint"),
       headers: _headers(),
     );
-
     return _handleResponse(response);
   }
 
-  /// ----------------------------
-  /// POST
-  /// ----------------------------
   static Future<dynamic> post(
     String endpoint,
     Map<String, dynamic> body,
@@ -72,13 +73,9 @@ class ApiService {
       headers: _headers(),
       body: jsonEncode(body),
     );
-
     return _handleResponse(response);
   }
 
-  /// ----------------------------
-  /// PUT
-  /// ----------------------------
   static Future<dynamic> put(
     String endpoint,
     Map<String, dynamic> body,
@@ -88,19 +85,60 @@ class ApiService {
       headers: _headers(),
       body: jsonEncode(body),
     );
-
     return _handleResponse(response);
   }
 
-  /// ----------------------------
-  /// DELETE
-  /// ----------------------------
   static Future<dynamic> delete(String endpoint) async {
     final response = await http.delete(
       Uri.parse("$baseUrl$endpoint"),
       headers: _headers(),
     );
-
     return _handleResponse(response);
+  }
+
+  // ====================================================
+  // AUTH HELPERS
+  // ====================================================
+
+  static Future<bool> login(String username, String password) async {
+    final res = await post("/login", {
+      "username": username,
+      "password": password,
+    });
+
+    if (res is Map && res["access_token"] != null) {
+      token = res["access_token"];
+      return true;
+    }
+    return false;
+  }
+
+  static Future<String> register(
+    String username,
+    String password,
+    String role,
+  ) async {
+    final res = await post("/register", {
+      "username": username,
+      "password": password,
+      "role": role,
+    });
+
+    if (res is Map && res["message"] != null) {
+      return res["message"];
+    }
+    return "Registration failed";
+  }
+
+  // ====================================================
+  // RECORDS SHORTCUTS (IMPORTANT FOR YOUR APP)
+  // ====================================================
+
+  static Future<dynamic> getRecords() async {
+    return await get("/records");
+  }
+
+  static Future<dynamic> createRecord(Map<String, dynamic> data) async {
+    return await post("/records", data);
   }
 }
