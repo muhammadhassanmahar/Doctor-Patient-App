@@ -1,13 +1,16 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
 from config import settings
 
 # ----------------------------
 # MONGODB CONNECTION
 # ----------------------------
 try:
-    client = MongoClient(settings.MONGO_URL)
+    client = MongoClient(
+        settings.MONGO_URL,
+        serverSelectionTimeoutMS=5000
+    )
 
-    # Test connection (important)
+    # Test connection
     client.admin.command("ping")
     print("✅ MongoDB Connected Successfully")
 
@@ -23,26 +26,46 @@ db = client[settings.DATABASE_NAME] if client else None
 # ----------------------------
 # COLLECTIONS
 # ----------------------------
-users_collection = db["users"] if db is not None else None
-patients_collection = db["patients"] if db is not None else None
-doctors_collection = db["doctors"] if db is not None else None
-records_collection = db["records"] if db is not None else None
+users_collection = db["users"] if db else None
+patients_collection = db["patients"] if db else None
+doctors_collection = db["doctors"] if db else None
+records_collection = db["records"] if db else None
 
 # ----------------------------
-# OPTIONAL: INDEXING (PERFORMANCE BOOST)
+# INDEX CREATION (PERFORMANCE + UNIQUE RULES)
 # ----------------------------
 def create_indexes():
-    if users_collection is not None:
-        users_collection.create_index("username", unique=True)
+    if not db:
+        return
 
-    if patients_collection is not None:
-        patients_collection.create_index("phone")
+    try:
+        # USERS (unique username)
+        users_collection.create_index(
+            [("username", ASCENDING)],
+            unique=True
+        )
 
-    if records_collection is not None:
-        records_collection.create_index("patient_id")
+        # PATIENTS (fast search by phone)
+        patients_collection.create_index(
+            [("phone", ASCENDING)]
+        )
 
-# Auto-run indexes
-try:
-    create_indexes()
-except Exception as e:
-    print("⚠️ Index creation skipped:", e)
+        # RECORDS (fast fetch by patient & doctor)
+        records_collection.create_index(
+            [("patient", ASCENDING)]
+        )
+
+        records_collection.create_index(
+            [("doctor", ASCENDING)]
+        )
+
+        print("✅ MongoDB Indexes Created")
+
+    except Exception as e:
+        print("⚠️ Index creation failed:", e)
+
+
+# ----------------------------
+# AUTO RUN INDEXES
+# ----------------------------
+create_indexes()
