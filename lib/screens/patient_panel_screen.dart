@@ -11,47 +11,48 @@ class PatientPanelScreen extends StatefulWidget {
 
 class _PatientPanelScreenState extends State<PatientPanelScreen> {
   bool isLoading = false;
+
   String message = "";
-  dynamic records;
+  Map<String, dynamic>? doctor;
+  List<dynamic> records = [];
 
   @override
   void initState() {
     super.initState();
-    fetchRecords();
+    fetchAllData();
   }
 
-  /// ----------------------------
-  /// FETCH PATIENT RECORDS
-  /// ----------------------------
-  Future<void> fetchRecords() async {
+  // ============================
+  // FETCH DOCTOR + RECORDS
+  // ============================
+  Future<void> fetchAllData() async {
     setState(() => isLoading = true);
 
     try {
-      final res = await ApiService.get("/medical-records");
+      final doctorRes = await ApiService.get("/my-doctor");
+      final recordRes = await ApiService.get("/my-records");
 
-      if (res is Map && res["error"] == true) {
-        setState(() {
-          message = res["message"];
-          records = null;
-        });
-      } else {
-        setState(() {
-          message = "Data loaded successfully";
-          records = res;
-        });
+      // Doctor
+      if (doctorRes is Map && doctorRes["doctor"] != null) {
+        doctor = Map<String, dynamic>.from(doctorRes["doctor"]);
       }
+
+      // Records
+      if (recordRes is Map && recordRes["records"] != null) {
+        records = recordRes["records"];
+      }
+
+      message = "Data loaded successfully";
     } catch (e) {
-      setState(() {
-        message = "Something went wrong";
-      });
+      message = "Failed to load data";
     }
 
     setState(() => isLoading = false);
   }
 
-  /// ----------------------------
-  /// LOGOUT
-  /// ----------------------------
+  // ============================
+  // LOGOUT
+  // ============================
   void logout() {
     ApiService.token = null;
 
@@ -62,9 +63,9 @@ class _PatientPanelScreenState extends State<PatientPanelScreen> {
     );
   }
 
-  /// ----------------------------
-  /// UI
-  /// ----------------------------
+  // ============================
+  // UI
+  // ============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,16 +80,17 @@ class _PatientPanelScreenState extends State<PatientPanelScreen> {
       ),
 
       body: RefreshIndicator(
-        onRefresh: fetchRecords,
+        onRefresh: fetchAllData,
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+
+                  // ================= WELCOME =================
                   const Text(
                     "Welcome Patient 🧑‍⚕️",
-                    style:
-                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 10),
@@ -100,39 +102,56 @@ class _PatientPanelScreenState extends State<PatientPanelScreen> {
 
                   const SizedBox(height: 20),
 
-                  /// ACTION CARD
+                  // ================= DOCTOR CARD =================
                   Card(
+                    elevation: 3,
                     child: ListTile(
-                      leading: const Icon(Icons.medical_information),
-                      title: const Text("View My Medical Records"),
-                      subtitle: const Text("Tap to refresh"),
-                      onTap: fetchRecords,
+                      leading: const Icon(Icons.local_hospital),
+                      title: const Text("My Doctor"),
+                      subtitle: Text(
+                        doctor != null
+                            ? doctor!["username"]
+                            : "No doctor assigned",
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
+                  // ================= RECORDS TITLE =================
                   const Text(
-                    "My Records",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    "My Medical Records",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 10),
 
-                  /// DATA DISPLAY
-                  if (records == null)
-                    const Text("No records found")
-                  else
-                    Card(
+                  // ================= RECORD LIST =================
+                  if (records.isEmpty)
+                    const Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(
-                          records.toString(),
-                          style: const TextStyle(fontSize: 14),
-                        ),
+                        padding: EdgeInsets.all(16),
+                        child: Text("No medical records found"),
                       ),
-                    ),
+                    )
+                  else
+                    ...records.map((r) {
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          leading: const Icon(Icons.medical_services),
+                          title: Text(r["diagnosis"] ?? "No diagnosis"),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Doctor: ${r["doctor"] ?? ""}"),
+                              Text("Prescription: ${r["prescription"] ?? ""}"),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                 ],
               ),
       ),
