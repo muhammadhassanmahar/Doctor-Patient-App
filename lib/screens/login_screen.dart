@@ -39,12 +39,11 @@ class _LoginScreenState extends State<LoginScreen> {
     // SUCCESS
     // ----------------------------
     if (res is Map && res["access_token"] != null) {
+      final String token = res["access_token"];
       final String role = res["role"] ?? "";
 
-      // ✅ FIXED: proper token storage
-      TokenStorage.saveToken(
-        res["access_token"],
-      );
+      // ✅ FIXED: pass BOTH arguments
+      TokenStorage.saveToken(token, role);
 
       // ----------------------------
       // ROLE BASED REDIRECT
@@ -54,12 +53,14 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(builder: (_) => const DoctorPanelScreen()),
         );
-      } else if (role == "patient") {
+      } 
+      else if (role == "patient") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const PatientPanelScreen()),
         );
-      } else {
+      } 
+      else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Unknown role from server")),
         );
