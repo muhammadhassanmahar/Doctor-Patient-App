@@ -6,46 +6,58 @@ class AuthService {
   // ----------------------------
   static Future<String> register(
       String username, String password, String role) async {
-    final res = await ApiService.post("/register", {
-      "username": username,
-      "password": password,
-      "role": role,
-    });
+    try {
+      final res = await ApiService.post("/register", {
+        "username": username,
+        "password": password,
+        "role": role,
+      });
 
-    if (res is Map && res["message"] != null) {
-      return res["message"];
+      if (res is Map && res["message"] != null) {
+        return res["message"];
+      }
+
+      return "Registration failed";
+    } catch (e) {
+      return "Error: $e";
     }
-
-    return "Registration failed";
   }
 
   // ----------------------------
   // LOGIN
   // ----------------------------
-  static Future<bool> login(String username, String password) async {
-    final res = await ApiService.post("/login", {
-      "username": username,
-      "password": password,
-    });
+  static Future<String?> login(String username, String password) async {
+    try {
+      final res = await ApiService.post("/login", {
+        "username": username,
+        "password": password,
+      });
 
-    if (res is Map && res["access_token"] != null) {
-      ApiService.token = res["access_token"];
-      return true;
+      if (res is Map && res["access_token"] != null) {
+        ApiService.token = res["access_token"];
+        return res["access_token"]; // return token (useful for debug + future)
+      }
+
+      return null;
+    } catch (e) {
+      return null;
     }
-
-    return false;
   }
 
   // ----------------------------
   // DASHBOARD
   // ----------------------------
   static Future<Map<String, dynamic>> dashboard() async {
-    final res = await ApiService.get("/dashboard");
+    try {
+      final res = await ApiService.get("/dashboard");
 
-    if (res is Map<String, dynamic>) {
-      return res;
+      if (res is Map<String, dynamic>) {
+        return res;
+      }
+
+      return {};
+    } catch (e) {
+      return {};
     }
-
-    return {};
   }
 }
