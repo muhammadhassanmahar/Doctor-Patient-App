@@ -21,7 +21,7 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
   }
 
   /// ----------------------------
-  /// FETCH MEDICAL RECORDS
+  /// FETCH DATA
   /// ----------------------------
   Future<void> fetchRecords() async {
     setState(() => isLoading = true);
@@ -36,13 +36,13 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
         });
       } else {
         setState(() {
-          message = "Records loaded successfully";
+          message = "Data loaded successfully";
           records = [res];
         });
       }
     } catch (e) {
       setState(() {
-        message = "Error loading data";
+        message = "Server error occurred";
       });
     }
 
@@ -63,13 +63,47 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
   }
 
   /// ----------------------------
+  /// UI CARD (STATS)
+  /// ----------------------------
+  Widget _buildStatsCard(String title, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.7), color],
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 30),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ----------------------------
   /// UI
   /// ----------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xfff4f6fa),
+
       appBar: AppBar(
         title: const Text("Doctor Dashboard"),
+        backgroundColor: Colors.blue,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -85,10 +119,33 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const Text(
-                    "Welcome Doctor 👨‍⚕️",
-                    style: TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold),
+                  /// HEADER
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Colors.blue, Colors.purple],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Text(
+                      "Welcome Doctor 👨‍⚕️\nManage your patients easily",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  /// STATS ROW
+                  Row(
+                    children: [
+                      _buildStatsCard("Records", Icons.folder, Colors.blue),
+                      _buildStatsCard("Patients", Icons.people, Colors.purple),
+                    ],
                   ),
 
                   const SizedBox(height: 10),
@@ -98,45 +155,76 @@ class _DoctorPanelScreenState extends State<DoctorPanelScreen> {
                     style: const TextStyle(color: Colors.grey),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
 
-                  /// QUICK ACTION CARDS
+                  /// ACTION BUTTONS
                   Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
-                      leading: const Icon(Icons.medical_services),
+                      leading: const Icon(Icons.medical_services,
+                          color: Colors.blue),
                       title: const Text("View Medical Records"),
-                      subtitle: const Text("All patients data"),
+                      subtitle: const Text("All patient data"),
                       onTap: fetchRecords,
                     ),
                   ),
 
                   Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
-                      leading: const Icon(Icons.refresh),
+                      leading:
+                          const Icon(Icons.refresh, color: Colors.green),
                       title: const Text("Refresh Data"),
                       onTap: fetchRecords,
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
 
-                  /// DATA DISPLAY
                   const Text(
-                    "Recent Data",
+                    "Recent Records",
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 10),
 
+                  /// RECORD LIST
                   if (records.isEmpty)
-                    const Text("No records found")
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text("No records found"),
+                      ),
+                    )
                   else
                     ...records.map((e) {
-                      return Card(
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 5,
+                            )
+                          ],
+                        ),
                         child: ListTile(
-                          leading: const Icon(Icons.person),
-                          title: Text(e.toString()),
+                          leading: const CircleAvatar(
+                            backgroundColor: Colors.blue,
+                            child: Icon(Icons.person, color: Colors.white),
+                          ),
+                          title: Text(
+                            e.toString(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios,
+                              size: 16),
                         ),
                       );
                     }).toList(),
