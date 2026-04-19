@@ -21,43 +21,46 @@ except Exception as e:
 # ----------------------------
 # DATABASE
 # ----------------------------
-db = client[settings.DATABASE_NAME] if client else None
+db = client[settings.DATABASE_NAME] if client is not None else None
 
 # ----------------------------
-# COLLECTIONS
+# COLLECTIONS (FIXED)
 # ----------------------------
-users_collection = db["users"] if db else None
-patients_collection = db["patients"] if db else None
-doctors_collection = db["doctors"] if db else None
-records_collection = db["records"] if db else None
+users_collection = db["users"] if db is not None else None
+patients_collection = db["patients"] if db is not None else None
+doctors_collection = db["doctors"] if db is not None else None
+records_collection = db["records"] if db is not None else None
 
 # ----------------------------
 # INDEX CREATION (PERFORMANCE + UNIQUE RULES)
 # ----------------------------
 def create_indexes():
-    if not db:
+    if db is None:
         return
 
     try:
         # USERS (unique username)
-        users_collection.create_index(
-            [("username", ASCENDING)],
-            unique=True
-        )
+        if users_collection is not None:
+            users_collection.create_index(
+                [("username", ASCENDING)],
+                unique=True
+            )
 
         # PATIENTS (fast search by phone)
-        patients_collection.create_index(
-            [("phone", ASCENDING)]
-        )
+        if patients_collection is not None:
+            patients_collection.create_index(
+                [("phone", ASCENDING)]
+            )
 
         # RECORDS (fast fetch by patient & doctor)
-        records_collection.create_index(
-            [("patient", ASCENDING)]
-        )
+        if records_collection is not None:
+            records_collection.create_index(
+                [("patient", ASCENDING)]
+            )
 
-        records_collection.create_index(
-            [("doctor", ASCENDING)]
-        )
+            records_collection.create_index(
+                [("doctor", ASCENDING)]
+            )
 
         print("✅ MongoDB Indexes Created")
 
