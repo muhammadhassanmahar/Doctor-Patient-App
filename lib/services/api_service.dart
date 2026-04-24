@@ -97,11 +97,11 @@ class ApiService {
   }
 
   // ====================================================
-  // AUTH HELPERS
+  // AUTH HELPERS (🔥 FIXED ENDPOINTS)
   // ====================================================
 
   static Future<bool> login(String username, String password) async {
-    final res = await post("/login", {
+    final res = await post("/auth/login", {
       "username": username,
       "password": password,
     });
@@ -118,7 +118,7 @@ class ApiService {
     String password,
     String role,
   ) async {
-    final res = await post("/register", {
+    final res = await post("/auth/register", {
       "username": username,
       "password": password,
       "role": role,
@@ -127,11 +127,16 @@ class ApiService {
     if (res is Map && res["message"] != null) {
       return res["message"];
     }
+
+    if (res is Map && res["detail"] != null) {
+      return res["detail"];
+    }
+
     return "Registration failed";
   }
 
   // ====================================================
-  // RECORDS SHORTCUTS (IMPORTANT FOR YOUR APP)
+  // RECORDS SHORTCUTS
   // ====================================================
 
   static Future<dynamic> getRecords() async {
