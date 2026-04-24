@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from config import settings
 from time import time
@@ -9,7 +9,7 @@ security = HTTPBearer()
 # ----------------------------
 # VERIFY JWT TOKEN
 # ----------------------------
-def verify_token(token=Depends(security)):
+def verify_token(token: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(
             token.credentials,
@@ -24,6 +24,7 @@ def verify_token(token=Depends(security)):
             detail="Invalid or expired token"
         )
 
+
 # ----------------------------
 # ROLE BASED ACCESS CONTROL
 # ----------------------------
@@ -36,6 +37,7 @@ def role_required(roles: list):
             )
         return account
     return wrapper
+
 
 # ----------------------------
 # RATE LIMITER (PER USER)
@@ -56,7 +58,7 @@ def rate_limiter(account=Depends(verify_token)):
 
     timestamps = request_logs.get(user, [])
 
-    # remove old requests
+    # keep only recent requests
     timestamps = [t for t in timestamps if now - t < TIME_WINDOW]
 
     if len(timestamps) >= RATE_LIMIT:
