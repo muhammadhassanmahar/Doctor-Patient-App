@@ -20,6 +20,11 @@ class AuthService {
         if (res["message"] != null) {
           return res["message"];
         }
+
+        if (res["detail"] != null) {
+          return res["detail"];
+        }
+
         if (res["error"] == true) {
           return res["message"] ?? "Registration failed";
         }
