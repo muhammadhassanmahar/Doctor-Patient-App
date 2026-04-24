@@ -1,20 +1,25 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
+
 
 # ----------------------------
 # REGISTER SCHEMA
 # ----------------------------
 class RegisterModel(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=5)
-    role: str = Field(..., pattern="^(doctor|patient)$")
+    role: str = Field(...)
 
 
 # ----------------------------
 # LOGIN SCHEMA
 # ----------------------------
 class LoginModel(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     username: str
     password: str
 
@@ -23,10 +28,10 @@ class LoginModel(BaseModel):
 # USER RESPONSE SCHEMA
 # ----------------------------
 class UserResponse(BaseModel):
-    id: Optional[str]
+    id: Optional[str] = None
     username: str
     role: str
-    created_at: Optional[datetime]
+    created_at: Optional[datetime] = None
 
 
 # ----------------------------
