@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException
-from database import users_collection
-from schemas.user_schema import RegisterModel, LoginModel  # ✅ FIXED IMPORT
-from utils.token import create_token
-from utils.hashing import hash_password, verify_password
 from datetime import datetime
 
+from database import users_collection
+from schemas.user_schema import RegisterModel, LoginModel
+from utils.token import create_token
+from utils.hashing import hash_password, verify_password
+
 router = APIRouter()
+
 
 # ====================================================
 # REGISTER USER (DOCTOR / PATIENT)
@@ -40,11 +42,12 @@ def register(data: RegisterModel):
         "updated_at": datetime.utcnow()
     }
 
-    users_collection.insert_one(user_data)
+    result = users_collection.insert_one(user_data)
 
     return {
         "status": "success",
         "message": "User registered successfully",
+        "user_id": str(result.inserted_id),
         "user": {
             "username": data.username,
             "role": data.role
