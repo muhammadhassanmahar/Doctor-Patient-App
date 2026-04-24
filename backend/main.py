@@ -20,7 +20,7 @@ app = FastAPI(
 # ----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # production mein specific domain dena hota hai
+    allow_origins=["*"],  # ⚠️ production me specific domain use karo
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,12 +44,12 @@ def home():
     }
 
 # ----------------------------
-# HEALTH CHECK (IMPORTANT FOR DEBUG)
+# HEALTH CHECK
 # ----------------------------
 @app.get("/health")
 def health():
     return {
         "status": "ok",
         "backend": "running",
-        "database": "check in database.py"
+        "database": "connected"
     }

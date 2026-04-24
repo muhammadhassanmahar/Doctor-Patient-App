@@ -10,7 +10,7 @@ class AuthService {
     String role,
   ) async {
     try {
-      final res = await ApiService.post("/register", {
+      final res = await ApiService.post("/auth/register", {
         "username": username,
         "password": password,
         "role": role,
@@ -39,7 +39,7 @@ class AuthService {
     String password,
   ) async {
     try {
-      final res = await ApiService.post("/login", {
+      final res = await ApiService.post("/auth/login", {
         "username": username,
         "password": password,
       });
@@ -56,11 +56,11 @@ class AuthService {
   }
 
   // ====================================================
-  // CURRENT USER (NEW - USEFUL FOR ROLE UI)
+  // CURRENT USER
   // ====================================================
   static Future<Map<String, dynamic>> me() async {
     try {
-      final res = await ApiService.get("/me");
+      final res = await ApiService.get("/users/me");
 
       if (res is Map<String, dynamic>) {
         return res;
@@ -77,7 +77,7 @@ class AuthService {
   // ====================================================
   static Future<Map<String, dynamic>> dashboard() async {
     try {
-      final res = await ApiService.get("/dashboard");
+      final res = await ApiService.get("/users/dashboard");
 
       if (res is Map<String, dynamic>) {
         return res;
@@ -90,7 +90,7 @@ class AuthService {
   }
 
   // ====================================================
-  // LOGOUT (NEW)
+  // LOGOUT
   // ====================================================
   static void logout() {
     ApiService.token = null;
