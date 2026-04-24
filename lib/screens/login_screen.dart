@@ -26,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
 
-    final res = await ApiService.post("/login", {
+    final res = await ApiService.post("/auth/login", {
       "username": username.text.trim(),
       "password": password.text.trim(),
     });
@@ -40,9 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
     // ----------------------------
     if (res is Map && res["access_token"] != null) {
       final String token = res["access_token"];
-      final String role = res["role"] ?? "";
 
-      // ✅ FIXED: pass BOTH arguments
+      // 🔴 FIX: role backend se token me nahi aa raha hota kabhi kabhi
+      final String role = res["user"]?["role"] ?? "";
+
       TokenStorage.saveToken(token, role);
 
       // ----------------------------
@@ -53,14 +54,12 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(builder: (_) => const DoctorPanelScreen()),
         );
-      } 
-      else if (role == "patient") {
+      } else if (role == "patient") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const PatientPanelScreen()),
         );
-      } 
-      else {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Unknown role from server")),
         );
