@@ -1,18 +1,19 @@
 from bson import ObjectId
+from datetime import datetime
 
 # ----------------------------
-# USER MODEL (MongoDB Document)
+# SINGLE USER MODEL
 # ----------------------------
 def user_model(user) -> dict:
     return {
-        "id": str(user["_id"]),
-        "username": user["username"],
-        "password": user["password"],
-        "role": user["role"]
+        "id": str(user.get("_id", "")),
+        "username": user.get("username", ""),
+        "role": user.get("role", ""),
+        "created_at": user.get("created_at"),
     }
 
 # ----------------------------
-# HELPER (LIST OF USERS)
+# LIST OF USERS
 # ----------------------------
 def users_model(users) -> list:
     return [user_model(user) for user in users]

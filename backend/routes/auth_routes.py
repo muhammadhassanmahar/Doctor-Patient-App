@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from database import users_collection
-from models import RegisterModel, LoginModel
+from schemas.user_schema import RegisterModel, LoginModel  # ✅ FIXED IMPORT
 from utils.token import create_token
 from utils.hashing import hash_password, verify_password
 from datetime import datetime
@@ -21,9 +21,9 @@ def register(data: RegisterModel):
         )
 
     # check if user exists
-    existing_user = users_collection.find_one(
-        {"username": data.username}
-    )
+    existing_user = users_collection.find_one({
+        "username": data.username
+    })
 
     if existing_user:
         raise HTTPException(
@@ -58,9 +58,9 @@ def register(data: RegisterModel):
 @router.post("/login")
 def login(data: LoginModel):
 
-    user = users_collection.find_one(
-        {"username": data.username}
-    )
+    user = users_collection.find_one({
+        "username": data.username
+    })
 
     # verify credentials
     if not user or not verify_password(data.password, user["password"]):
