@@ -1,6 +1,7 @@
 from bson import ObjectId
 from datetime import datetime
 
+
 # ----------------------------
 # SINGLE RECORD MODEL
 # ----------------------------
@@ -27,6 +28,9 @@ def record_model(record) -> dict:
 # MULTIPLE RECORDS MODEL
 # ----------------------------
 def records_model(records) -> list:
+    if records is None:
+        return []
+
     return [record_model(record) for record in records]
 
 
